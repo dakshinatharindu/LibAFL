@@ -39,8 +39,8 @@ use libafl_targets::{edges_map_mut_ptr, EDGES_MAP_DEFAULT_SIZE, MAX_EDGES_FOUND}
 
 // use libafl_qemu::QemuSnapshotBuilder; // for normal qemu snapshot
 
-pub static mut MAX_INPUT_SIZE: usize = 4;
-pub static FUZZ_INPUT_ADDR: GuestPhysAddr = 0x20020020;
+pub static FUZZ_INPUT_ADDR: GuestPhysAddr = 0x20020043;
+pub static mut MAX_INPUT_SIZE: usize = 64;
 
 pub fn fuzz() {
     env_logger::init();
