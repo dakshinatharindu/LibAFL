@@ -21,7 +21,7 @@ vendor
 *.so
 *.out
 *.elf
-*.bin
+# *.bin
 *.dll
 *.exe
 *.dylib
