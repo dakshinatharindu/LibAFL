@@ -33,7 +33,7 @@ run flavor="breakpoint": (target flavor) (build flavor)
         -monitor null \
         -device loader,file=example/lib/jump.bin,addr=0x20400000 \
         -device loader,file=/workspaces/wolfboot-fuzzer/wolfBoot/test-app/image_v1_signed.bin,addr=0x20020000 \
-        -device loader,file=/workspaces/wolfboot-fuzzer/wolfBoot/test-app/image_v2_signed.bin,addr=0x20060000 \
+        -device loader,file=/workspaces/wolfboot-fuzzer/wolfBoot/test-app/image_v1_signed.bin,addr=0x20060000 \
         -kernel /workspaces/wolfboot-fuzzer/wolfBoot/wolfboot.elf \
         -drive if=none,format=qcow2,file={{DUMMY_IMG}} \
         -serial null \
