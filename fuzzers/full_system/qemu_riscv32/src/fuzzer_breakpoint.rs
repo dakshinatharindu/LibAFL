@@ -39,7 +39,8 @@ use libafl_targets::{edges_map_mut_ptr, EDGES_MAP_DEFAULT_SIZE, MAX_EDGES_FOUND}
 
 // use libafl_qemu::QemuSnapshotBuilder; // for normal qemu snapshot
 
-pub static mut MAX_INPUT_SIZE: usize = 51;
+pub static mut MAX_INPUT_SIZE: usize = 4;
+pub static FUZZ_INPUT_ADDR: GuestPhysAddr = 0x20020020;
 
 pub fn fuzz() {
     env_logger::init();
@@ -61,12 +62,9 @@ pub fn fuzz() {
     )
     .unwrap();
 
-    let input_addr = elf
-        .resolve_symbol(
-            &env::var("FUZZ_INPUT").unwrap_or_else(|_| "FUZZ_INPUT".to_owned()),
-            0,
-        )
-        .expect("Symbol or env FUZZ_INPUT not found") as GuestPhysAddr;
+    let input_addr = env::var("FUZZ_INPUT")
+        .map(|s| str::parse::<u64>(&s).expect("FUZZ_INPUT was not a number"))
+        .unwrap_or(FUZZ_INPUT_ADDR);
     println!("FUZZ_INPUT @ {input_addr:#x}");
 
     let main_addr = elf
