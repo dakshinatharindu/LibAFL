@@ -6,8 +6,8 @@ use libafl::{
     corpus::{Corpus, InMemoryCorpus, OnDiskCorpus},
     events::{launcher::Launcher, EventConfig},
     executors::ExitKind,
-    feedback_or, feedback_or_fast,
-    feedbacks::{CrashFeedback, MaxMapFeedback, TimeFeedback, TimeoutFeedback},
+    feedback_or, //feedback_or_fast,
+    feedbacks::{CrashFeedback, MaxMapFeedback, TimeFeedback}, //TimeoutFeedback},
     fuzzer::{Fuzzer, StdFuzzer},
     inputs::BytesInput,
     monitors::MultiMonitor,
@@ -39,8 +39,8 @@ use libafl_targets::{edges_map_mut_ptr, EDGES_MAP_DEFAULT_SIZE, MAX_EDGES_FOUND}
 
 // use libafl_qemu::QemuSnapshotBuilder; // for normal qemu snapshot
 
-pub static FUZZ_INPUT_ADDR: GuestPhysAddr = 0x20020043;
-pub static mut MAX_INPUT_SIZE: usize = 64;
+pub static FUZZ_INPUT_ADDR: GuestPhysAddr = 0x20020000;
+pub static mut MAX_INPUT_SIZE: usize = 131;
 
 pub fn fuzz() {
     env_logger::init();
@@ -87,7 +87,26 @@ pub fn fuzz() {
         let mut harness = |emulator: &mut Emulator<_, _, _, _, _, _, _>,
                            state: &mut _,
                            input: &BytesInput| unsafe {
-            emulator.run(state, input).unwrap().try_into().unwrap()
+            let mut result = emulator.run(state, input)
+                .unwrap()
+                .try_into()
+                .unwrap();
+
+            // Guard is the memory address of the first byte after the 131 byte header region
+            let guard = input_addr
+                .checked_add(MAX_INPUT_SIZE as u64)
+                .expect("Guard overflow");
+
+            // Peeking the single byte at guard
+            let mut b = [0u8; 1];
+            emulator.qemu().read_phys_mem(guard, &mut b);
+
+            // Forcing a crash if the byte was modified (is non-zero)
+            if b[0] != 0 {
+                result = ExitKind::Crash;
+            }
+
+            result
         };
 
         // Create an observation channel using the coverage map
@@ -135,7 +154,7 @@ pub fn fuzz() {
             ),
             true,
         );
-
+        
         let devices = emu.list_devices();
         println!("Devices = {:?}", devices);
 
@@ -149,7 +168,8 @@ pub fn fuzz() {
         );
 
         // A feedback to choose if an input is a solution or not
-        let mut objective = feedback_or_fast!(CrashFeedback::new(), TimeoutFeedback::new());
+        // let mut objective = feedback_or_fast!(CrashFeedback::new(), TimeoutFeedback::new());
+        let mut objective = CrashFeedback::new();
 
         // If not restarting, create a State from scratch
         let mut state = state.unwrap_or_else(|| {
